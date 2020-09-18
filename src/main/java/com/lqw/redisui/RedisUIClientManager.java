@@ -1,27 +1,27 @@
 package com.lqw.redisui;
 
 import com.alibaba.fastjson.JSON;
-import com.lqw.redisui.bean.RedisServerInfo;
-import com.lqw.redisui.db.RedisKeyInfo;
-import com.lqw.redisui.i18n.I18NTool;
-import com.lqw.redisui.utils.FileUtils;
-import com.lqw.redisui.utils.StringUtils;
+import com.formdev.flatlaf.FlatDarculaLaf;
+import com.lqw.redisui.model.RedisServerInfo;
+import com.lqw.redisui.model.Server;
+import com.lqw.redisui.i18n.I18n;
+import com.lqw.redisui.ui.dialog.AddServerDialog;
+import com.lqw.redisui.ui.listener.WindowClosedListener;
+import com.lqw.redisui.ui.panel.*;
+import com.lqw.redisui.utils.FileUtil;
+import com.lqw.redisui.utils.StringUtil;
 import redis.clients.jedis.Jedis;
 
 import javax.swing.*;
-import javax.swing.event.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
-import javax.swing.tree.ExpandVetoException;
 import javax.swing.tree.TreePath;
-import javax.xml.crypto.dsig.keyinfo.KeyInfo;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.DoubleStream;
 
 /**
  * Redis GUI 启动类, Redis 启动入口
@@ -31,22 +31,22 @@ import java.util.stream.DoubleStream;
  */
 public class RedisUIClientManager {
 
-
-
     private JFrame jFrame;
-
-    private JMenuBar jMenuBar;
 
     private Map<String, RedisServerInfo> redisServersMap = new HashMap<>();
 
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
+        EventQueue.invokeLater(() -> {
             RedisUIClientManager redisUIClientManager = new RedisUIClientManager();
-            redisUIClientManager.launch();
+            redisUIClientManager.jFrame.setVisible(true);
         });
     }
 
+
+    public RedisUIClientManager() {
+        launch();
+    }
 
     /**
      * Open the window
@@ -54,24 +54,22 @@ public class RedisUIClientManager {
      */
     public void launch() {
         //check version
-        boolean fileExists = FileUtils.checkConfigFile(I18NTool.DEFAULT_CONFIG_FILE_PATH);
+        boolean fileExists = FileUtil.checkConfigFile(I18n.DEFAULT_CONFIG_FILE_PATH);
 
         if(fileExists) {
-
+            try {
+                //设置黑色主题
+                UIManager.setLookAndFeel(new FlatDarculaLaf());
+//                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            } catch (UnsupportedLookAndFeelException e) {
+                e.printStackTrace();
+            }
             createMainUI();
         }
 
     }
 
 
-    /**
-     * create main ui
-     * <p>
-     *     init main jframe
-     *     init main menu
-     *     init main content
-     * </p>
-     */
     protected void createMainUI(){
 
         initMainJFrame();
@@ -83,97 +81,31 @@ public class RedisUIClientManager {
     }
 
 
-    /**
-     * init main content
-     */
     private void initMainContent() {
 
-        JButton button3 = new JButton("中");
-        JButton button5 = new JButton("下");
+        MainPanel mainPanel = new MainPanel(jFrame);
+        mainPanel.initMainPanel();
 
-        jFrame.add(createCenterSplitPaneComponent(),BorderLayout.CENTER);
-
-        jFrame.add(button5,BorderLayout.SOUTH);
-
-
-
-        button3.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String actionCommand = e.getActionCommand();
-
-                Jedis jedis = new Jedis("192.168.19.60", 6379);
-
-                if(jedis != null){
-                    System.out.println("连接 redis 成功");
-
-                    String hummingBirdAccessToken = jedis.get("HUMMING_BIRD_ACCESS_TOKEN");
-                    System.out.println("蜂鸟 token:" + hummingBirdAccessToken);
-                }
-            }
-        });
     }
 
     private void initMainMenu() {
-
-        jMenuBar = new JMenuBar();
-
-        JMenu jMenu = new JMenu("Servers");
-        JMenuItem newServer = new JMenuItem("新建");
-
-
-        newServer.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                // 显示输入对话框, 返回输入的内容
-                showNewServerDialog(jFrame, jFrame);
-            }
-        });
-
-        jMenu.add(newServer);
-        jMenuBar.add(jMenu);
-        jFrame.setJMenuBar(jMenuBar);
+        HomeMenuPanel homeMenuPanel = new HomeMenuPanel(jFrame);
+        homeMenuPanel.initHomeMenu();
     }
 
     private void initMainJFrame() {
 
-        jFrame = new JFrame(I18NTool.MAIN_TITLE);
+        jFrame = new JFrame(I18n.MAIN_TITLE);
         jFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        jFrame.setLocationRelativeTo(null);
 
-        jFrame.setMinimumSize(new Dimension(I18NTool.DEFAULT_WIDTH, I18NTool.DEFAULT_HEIGHT));
+        jFrame.setMinimumSize(new Dimension(I18n.DEFAULT_WIDTH, I18n.DEFAULT_HEIGHT));
         jFrame.setResizable(true);
-        jFrame.setAutoRequestFocus(true);
 
         jFrame.setLayout(new BorderLayout());
 
-        jFrame.pack();
-        jFrame.setVisible(true);
-    }
+        jFrame.addWindowListener(new WindowClosedListener(jFrame));
 
-
-    private JSplitPane createCenterSplitPaneComponent(){
-
-        //left and right layout
-        JSplitPane leftRightSplitPane = new JSplitPane();
-
-        //left is redis server list
-        JScrollPane redisServerListsSplitPane = initRedisServerLists();
-        leftRightSplitPane.setLeftComponent(redisServerListsSplitPane);
-
-
-        leftRightSplitPane.setOrientation(JSplitPane.HORIZONTAL_SPLIT);
-        leftRightSplitPane.setDividerLocation(250);
-
-
-        JSplitPane jSplitPane = new JSplitPane();
-
-        jSplitPane.setOrientation(JSplitPane.VERTICAL_SPLIT);
-        jSplitPane.setTopComponent(new JButton("上面"));
-        jSplitPane.setBottomComponent(new JButton("下面"));
-
-        leftRightSplitPane.setRightComponent(jSplitPane);
-
-        return leftRightSplitPane;
     }
 
 
@@ -188,13 +120,13 @@ public class RedisUIClientManager {
         DefaultTreeCellRenderer renderer = new DefaultTreeCellRenderer();
 
         //创建根节点
-        DefaultMutableTreeNode redisServerRootNode = new DefaultMutableTreeNode(I18NTool.REDIS_SERVER_ROOT_NAMES);
+        DefaultMutableTreeNode redisServerRootNode = new DefaultMutableTreeNode(I18n.REDIS_SERVER_ROOT_NAMES);
 
         //解析配置文件
 
         String config = ""; /**FileUtils.readStringFromFile(Paths.get(I18NTool.DEFAULT_CONFIG_FILE_PATH));**/
 
-        if(!StringUtils.isBlank(config)){
+        if(!StringUtil.isBlank(config)){
 
             //配置文件不为空
             List<RedisServerInfo> redisServerInfos = JSON.parseObject(config, List.class);
@@ -283,13 +215,19 @@ public class RedisUIClientManager {
                         //拿到的 key
                         if(path.length <= 4){
                             String key = String.valueOf(path[3]);
-                            String value = jedis.get(key);
 
-                            RedisKeyInfo keyInfo = new RedisKeyInfo();
-                            keyInfo.setKey(key);
-                            keyInfo.setValue(value);
+                            String type = jedis.type(key);
 
-                            System.out.println(keyInfo.toString());
+                            System.out.println(type);
+
+
+//                            String value = jedis.get(key);
+//
+//                            RedisKeyInfo keyInfo = new RedisKeyInfo();
+//                            keyInfo.setKey(key);
+//                            keyInfo.setValue(value);
+//
+//                            System.out.println(keyInfo.toString());
 
                         }
                     }
@@ -332,116 +270,15 @@ public class RedisUIClientManager {
     }
 
 
+    
 
+    private void showNewServerDialog(JFrame jFrame) {
+        AddServerDialog addServerDialog = new AddServerDialog(jFrame);
 
-
-
-    private static void showNewServerDialog(Frame owner, Component parentComponent) {
-        // 创建一个模态对话框
-        final JDialog dialog = new JDialog(owner, "提示", true);
-        // 设置对话框的宽高
-        dialog.setSize(400, 400);
-        // 设置对话框大小不可改变
-        dialog.setResizable(false);
-        dialog.setAlwaysOnTop(true);
-        // 设置对话框相对显示的位置
-        dialog.setLocationRelativeTo(parentComponent);
-
-        // 创建一个标签显示消息内容
-//        JLabel messageLabel = new JLabel("对话框消息内容");
-
-        // 创建一个按钮用于关闭对话框
-        JButton okBtn = new JButton("确定");
-        okBtn.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                // 关闭对话框
-                dialog.dispose();
-            }
-        });
-
-
-
-
-        // 创建对话框的内容面板, 在面板内可以根据自己的需要添加任何组件并做任意是布局
-
-
-        JPanel jPanel = new JPanel(new GridLayout(2, 1));
-
-
-        JTabbedPane tabbedPane = new JTabbedPane();
-
-        //创建第一个选项卡
-        Box vBox = createAddConnectionPanel();
-        tabbedPane.add("connection", vBox);
-        tabbedPane.add("SSL", new JLabel("2222"));
-
-        jPanel.add(tabbedPane);
-
-        JButton testCollectionBtn = new JButton("测试连接");
-        testCollectionBtn.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-
-
-
-
-            }
-        });
-
-        GridBagLayout gridBagLayout = new GridBagLayout();
-
-        JPanel buttonPanel = new JPanel(gridBagLayout);
-        buttonPanel.add(okBtn);
-
-        buttonPanel.add(testCollectionBtn);
-
-        jPanel.add(buttonPanel);
-
-        // 设置对话框的内容面板
-        dialog.setContentPane(jPanel);
-        // 显示对话框
-        dialog.setVisible(true);
+        Server open = (Server) addServerDialog.open();
+        System.out.println("添加的 server: " + open.toString());
     }
 
-
-
-    private static Box createAddConnectionPanel() {
-
-
-        // 第 2 个 JPanel, 使用默认的浮动布局
-        JPanel namePanel = new JPanel();
-        namePanel.add(new JLabel("Name:"));
-        namePanel.add(new JTextField( 10));
-
-        JPanel hostPanel = new JPanel();
-        hostPanel.add(new JLabel("Host:"));
-        hostPanel.add(new JTextField(10));
-
-
-        JPanel portPanel = new JPanel();
-        portPanel.add(new JLabel("Port:"));
-        portPanel.add(new JTextField("6379",10));
-
-
-
-
-        JPanel authPanel = new JPanel();
-        authPanel.add(new JLabel("Auth:"));
-        authPanel.add(new JTextField(10));
-
-        // 创建一个垂直盒子容器, 把上面 3 个 JPanel 串起来作为内容面板添加到窗口
-        Box vBox = Box.createVerticalBox();
-        vBox.add(namePanel);
-        vBox.add(hostPanel);
-        vBox.add(portPanel);
-        vBox.add(authPanel);
-
-        return vBox;
-
-
-
-    }
 
 
 }

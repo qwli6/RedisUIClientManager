@@ -1,4 +1,4 @@
-package com.lqw.redisui.bean;
+package com.lqw.redisui.model;
 
 import java.io.Serializable;
 

@@ -1,7 +1,7 @@
 package com.lqw.redisui.utils;
 
-import com.lqw.redisui.bean.RedisServerInfo;
-import com.lqw.redisui.i18n.I18NTool;
+import com.lqw.redisui.model.RedisServerInfo;
+import com.lqw.redisui.i18n.I18n;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -10,7 +10,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-public class FileUtils {
+public class FileUtil {
 
 
     public static String readStringFromFile(Path path) {
@@ -37,9 +37,9 @@ public class FileUtils {
         try {
             Files.createFile(path);
             RedisServerInfo redisServerInfo = new RedisServerInfo();
-            redisServerInfo.setAlias(I18NTool.DEFAULT_LOCAL_ALIAS);
-            redisServerInfo.setPort(I18NTool.DEFAULT_PORT);
-            redisServerInfo.setAddress(I18NTool.DEFAULT_LOCAL_ADDRESS);
+            redisServerInfo.setAlias(I18n.DEFAULT_LOCAL_ALIAS);
+            redisServerInfo.setPort(I18n.DEFAULT_PORT);
+            redisServerInfo.setAddress(I18n.DEFAULT_LOCAL_ADDRESS);
 
             Files.write(path, "".getBytes(Charset.defaultCharset()));
         } catch (IOException e) {

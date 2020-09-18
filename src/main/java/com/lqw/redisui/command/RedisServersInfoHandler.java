@@ -1,4 +1,4 @@
-package com.lqw.redisui.db;
+package com.lqw.redisui.command;
 
 import redis.clients.jedis.Jedis;
 

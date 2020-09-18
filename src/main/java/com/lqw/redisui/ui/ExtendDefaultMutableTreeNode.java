@@ -1,6 +1,6 @@
-package com.lqw.redisui.swing;
+package com.lqw.redisui.ui;
 
-import com.lqw.redisui.bean.RedisServerInfo;
+import com.lqw.redisui.model.RedisServerInfo;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 
